@@ -61,7 +61,7 @@ That's where this script's abilities end. It only makes symlinks and reports unu
 
 ## How to install:
 1. Save the file to whatever directory you keep your personal scripts. (Example: $HOME/bin or ~/Scripts)
-2. Give the file execution permissions. (Example: `chmod +x ~/bin/steam-compatdata-symlinker-thing`
+2. Give the file execution permissions. (Example: `chmod +x ~/bin/steam-compatdata-symlinker`
 3. Done.
 
 ## Usage:
