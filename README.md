@@ -5,7 +5,7 @@ This is a simple BASH script that creates human-readable symlinks for compatdata
 
 This script also reports broken symlinks, and unused common, compatdata, and shadercache directories.
 
-**NOTE: This script can ONLY make symlinks, report broken symlinks, and report unused directories. Any actions to be taken with these reports is outside the scope of this script. It's up to YOU to decide what should be done and YOU must do it manually.** 
+**NOTE: This script can ONLY create symlinks, report broken symlinks, and report unused directories. Any actions to be taken with these reports is outside the scope of this script. It's up to YOU to decide what should be done and YOU must do it manually.** 
 
 ## Example 1:
 Game: `Fallout: New Vegas`
@@ -21,7 +21,11 @@ You run this script and confirm the prompt. This script creates the symlink: `..
 
 The new symlink points to: `../steamapps/compatdata/22380/`
 
-Both directories are present in compatdata, (`22380` and `Fallout: New Vegas`) but one is much more readable than the other. Simple, right?
+Both directories are present in compatdata, (`22380` and `Fallout: New Vegas`) but one is much more readable than the other.
+
+![Screenshot_20220613_175928](https://user-images.githubusercontent.com/4404140/173459502-ec491d8c-cdac-4dc3-9b3b-9c29adfd152d.png)
+
+Simple, right?
 
 **NOTE: This script will perform this function for EVERY game in any steamapps directory you give it (if the game has a compatdata directory).**
 
