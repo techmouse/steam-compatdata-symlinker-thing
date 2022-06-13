@@ -1,0 +1,240 @@
+#!/bin/bash
+#steam-compatdata-symlinker
+#by: Mouse
+#Current build: June 13, 2022
+
+#the ln command with switches:
+#change this command if you want this script to change how it creates links:
+cmd="ln -sTf"
+
+countlines(){
+	grep "" -c "$1"
+}
+
+readline(){
+	if [[ $1 && $2 ]]; then
+		max="$(countlines "$1")"
+		if (( $2 > $max )); then
+			echo "$(sed -n "${max}p" "$1")"
+		else
+			echo "$(sed -n "${2}p" "$1")"
+		fi
+	fi
+}
+
+#this lets us look for a corresponding symlink to give us a hint as to what game this compatdata was originally for
+lnsearchsub(){
+	str="$2"
+	linktarget="$(readlink -f "$1")"
+	if [[ "$linktarget" == *"$str"* ]]; then
+		echo "Found symlink for $(basename "$linktarget"). It's likely $(basename "$1")'s compatdata directory."
+	fi
+}
+
+lnsearch(){
+	if (( $# >= 2 )); then
+		export -f lnsearchsub
+		find "$2" -maxdepth 1 -type l -exec bash -c "lnsearchsub \"{}\" \"$1\"" \;
+	else
+		echo "Usage: $0 <string to search for> <dir to search in>"
+	fi
+}
+
+usage(){
+	echo "Usage: $0 [ \"steamapps directory\" ]"
+	echo "This will automatically make symlinks for all directories in the supplied /steamapps/compatdata/ directory."
+	echo "This makes it easier to find the right compatdata directory without needing to look up the game's Steam ID."
+	echo "Run this script again to create symlinks for new game installs, and clean up old uninstalls."
+	echo "This script will also check for unused compatdata, shadercache, and common directories, left behind from uninstalls and moved installs."
+	echo "-h for this dialog."
+	echo "-e for a longer explanation on these unused directories."
+}
+
+longexplain(){
+	echo "There are multiple reasons why unused directories would exist, such as the game was uninstalled or moved to a different drive, another program made changes, a user made changes, etc etc."
+	echo "But the important part is, as far as any directories reported by this script goes, Steam would be unaware of their existence and wouldn't be doing anything with them."
+	echo ""
+	echo "If you would like to know what game a directory is tied to, type the full name of the folder (the number(which is the steamid)) into your Steam library. It will automatically show you the game."
+	echo ""
+	echo "Whether or not these directories should be deleted is left to your discretion. But be aware your user data could be inside of them, including save files. So I advise at least looking around in the directory for valuable data first before deleting it."
+	echo ""
+	echo "If it's a compatdata directory, then look in the program files and steamuser directories."
+	echo "If it's a steamapps/common directory, then obviously just look in the game's install directory."
+	echo "If it's a shadercache directory, then you can safely delete that directory, unless you plan on reinstalling that game, on that same steamapps drive, sometime in the near future. This could save Steam from recompiling the shader cache. But even then, Steam may choose to do it anyways, so it's left to your discretion."
+	echo ""
+	echo "NOTE: Every steamapps directory has its own common, compatdata, and shadercache directories. If you have games installed on multiple drives, even moving a game from one drive to another can leave behind some of these directories. So just because Steam says a game is installed doesn't mean it's installed to the specific steamapps directory you supplied, which would mean these directories are still quite likely not in use. Again, this is all left to your discretion."
+}
+
+if (( $# >= 1 )); then
+	while getopts "he" OPTION; do
+		case "${OPTION}" in
+			h)
+				usage
+				exit
+				;;
+			e)
+				longexplain
+				exit
+				;;
+			\?)
+				exit
+				;;
+		esac
+	done
+	shift "$(($OPTIND -1))"
+
+	thedir="$(realpath "$1")"
+	if [[ -d "$thedir/compatdata" ]]; then
+		echo "The following commands will run:"
+		counter=0
+		for i in "$thedir/"*".acf"; do
+			id="${i/"$thedir/appmanifest_"/""}"
+			id="${id/".acf"/""}"
+			if [[ -d "$thedir/compatdata/$id" ]]; then
+				#line for undoing when $thedir/compatdata/$id/$id" was created by ln.
+				#(I had to use -f and -T to prevent this. I had no idea ln behaved like this.)
+#				if [[ -d "$thedir/compatdata/$id/$id" ]]; then
+#					gio remove "$thedir/compatdata/$id/$id"
+#				fi
+
+				name="$(readline "$i" "5")"
+				name="${name/"\"name\""/""}"
+				name="${name//"	"/""}"
+				name="${name//"\""/""}"
+				echo "$cmd \"$thedir/compatdata/$id\" \"$thedir/compatdata/$name\""
+				counter=$(( counter + 1 ))
+#			else
+				#I guess it's technically an error but steam downloads appmanifest files for all of a game's subdepo's, so I guess we don't need to report on every single one. Or really any of them.
+#				echo "ERROR: Missing target directory for ($name): $thedir/compatdata/$id"
+#				echo "Skipping."
+			fi
+		done
+
+		#same code again but we run it for realsies this time. it's really just a single line change. code must be updated in both blocks.
+		echo
+		echo "$counter symlinks will be created."
+		echo "Continue? [ y / n ]"
+		read input
+		if [[ "$input" == "y"* ]] || [[ "$input" == "Y"* ]]; then
+			counter=0
+			for i in "$thedir/"*".acf"; do
+				id="${i/"$thedir/appmanifest_"/""}"
+				id="${id/".acf"/""}"
+				if [[ -d "$thedir/compatdata/$id" ]]; then
+					name="$(readline "$i" "5")"
+					name="${name/"\"name\""/""}"
+					name="${name//"	"/""}"
+					name="${name//"\""/""}"
+					$cmd "$thedir/compatdata/$id" "$thedir/compatdata/$name"
+					counter=$(( counter + 1 ))
+#				else
+#					echo "ERROR: Missing target directory for ($name): $thedir/compatdata/$id"
+#					echo "Skipping."
+				fi
+			done
+			echo
+			echo "Done!"
+			echo "$counter symlinks created."
+
+		else
+			echo "Canceled!"
+		fi
+
+		#now let's find broken symlinks
+		asdf="$(find "$thedir/compatdata/" -maxdepth 1 -xtype l)"
+		if [[ "$asdf" == "" ]]; then
+			echo "No broken symlinks found."
+		else
+			echo
+			echo "--------------------------------"
+			echo "Broken symlinks found:"
+			echo "$asdf"
+			echo "--------------------------------"
+		fi
+
+		unaccountedfound=0
+
+		#now let's look for unused compatdata directories
+		found=0
+		for number in "$thedir/compatdata/"*; do
+			if [[ -d "$number" ]] && ! [[ -L "$number" ]]; then
+				if ! [[ -e "$thedir/appmanifest_""$(basename "$number")"".acf" ]]; then
+					if [[ $found == 0 ]]; then
+						found=1
+						unaccountedfound=1
+						echo
+						echo "--------------------------------"
+						echo "Unused compatdata directory(s) found:"
+					fi
+					echo "$number (link: https://steamdb.info/app/$(basename "$number"))"
+					lnsearch "$number" "$thedir/compatdata/"
+				fi
+			fi
+		done
+		if [[ $found == 1 ]]; then
+			echo "--------------------------------"
+		else
+			echo "No unused compatdata directories found."
+		fi
+
+		#let's look for unused steamapps/common directories too while we're at it.
+		found=0
+		for d in "$thedir/common/"*; do
+			if [[ -d "$d" ]] && ! [[ -L "$d" ]]; then
+				asdf="$(basename "$d")"
+				if ! [[ "$(grep -ie "$asdf" "$thedir/app"*)" == *"$asdf"* ]]; then
+					if [[ $found == 0 ]]; then
+						found=1
+						unaccountedfound=1
+						echo
+						echo "--------------------------------"
+						echo "Unused common directory(s) found:"
+					fi
+					echo "$thedir/common/$asdf ($asdf)"
+				fi
+			fi
+		done
+		if [[ $found == 1 ]]; then
+			echo "--------------------------------"
+		else
+			echo "No unused common directories found."
+		fi
+
+		#and, what the hell, let's look for unused shader directories too I guess. we might as well since we're already wiping all of these other butts.
+		found=0
+		for number in "$thedir/shadercache/"*; do
+			if [[ -d "$number" ]] && ! [[ -L "$number" ]]; then
+				if ! [[ -e "$thedir/appmanifest_""$(basename "$number")"".acf" ]]; then
+					if [[ $found == 0 ]]; then
+						found=1
+						unaccountedfound=1
+						echo
+						echo "--------------------------------"
+						echo "Unused shadercache directory(s) found:"
+					fi
+					echo "$number (link: https://steamdb.info/app/$(basename "$number"))"
+				fi
+			fi
+		done
+		if [[ $found == 1 ]]; then
+			echo "--------------------------------"
+		else
+			echo "No unused shadercache directories found."
+		fi
+
+		if [[ $unaccountedfound == 1 ]]; then
+			echo
+			echo "These unused directories seem to have no configuration files and are likely not in use."
+			echo "For a longer explanation, run:"
+			echo "$0 -e"
+		fi
+
+	else
+		echo "ERROR: compatdata directory not found."
+		echo "Ensure you are supplying a valid steamapps directory."
+		echo "Exiting."
+	fi
+
+else
+	usage
+fi
