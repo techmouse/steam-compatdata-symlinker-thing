@@ -27,7 +27,7 @@ Both directories are present in compatdata, (`22380` and `Fallout: New Vegas`) b
 
 Simple, right?
 
-**NOTE: This script will perform this function for EVERY game in any steamapps directory you give it (if the game has a compatdata directory).**
+**NOTE: This script will perform this function for EVERY game in any steamapps directory you give it in bulk(if the game has a compatdata directory).**
 
 ## Example 2:
 You uninstall FO:NV.
