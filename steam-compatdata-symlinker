@@ -1,11 +1,20 @@
 #!/bin/bash
 #steam-compatdata-symlinker
 #by: Mouse
-#Current build: June 13, 2022
+#Current build: June 14, 2022
 
 #the ln command with switches:
 #change this command if you want this script to change how it creates links:
 cmd="ln -sTf"
+
+#directory filters:
+#you can add your own filters here for the directories you want ignored.
+#filters must be exact
+#in other words, they're case sensitive and each game name or ID must be written here exactly as it appears in the directory name.
+#example 1: the filter "Fallout" will not filter out the game Fallout: New Vegas
+#example 2: the filter "Fallout: New Vegas" will not filter out any Fallout. Nor will it filter out the game it was intended to filter either, because the directory is named "Fallout New Vegas"
+#note: filter checks aren't applied to broken symlinks
+filter=("Steam Controller Configs" "0")
 
 countlines(){
 	grep "" -c "$1"
@@ -38,6 +47,49 @@ lnsearch(){
 	else
 		echo "Usage: $0 <string to search for> <dir to search in>"
 	fi
+}
+
+isfiltered(){
+	y=false
+	for x in "${filter[@]}"; do
+		if [[ "$x" == "$1" ]]; then
+			y=true
+			break
+		fi
+	done
+	echo "$y"
+}
+
+lnfn(){
+	counter=0
+	for i in "$thedir/"*".acf"; do
+		id="${i/"$thedir/appmanifest_"/""}"
+		id="${id/".acf"/""}"
+		if [[ "$(isfiltered "$id")" == "false" ]]; then
+			if [[ -d "$thedir/compatdata/$id" ]]; then
+				#line for undoing when $thedir/compatdata/$id/$id" was created by ln.
+				#(I had to use -f and -T to prevent this. I had no idea ln behaved like this.)
+#				if [[ -d "$thedir/compatdata/$id/$id" ]]; then
+#					gio remove "$thedir/compatdata/$id/$id"
+#				fi
+				name="$(readline "$i" "5")"
+				name="${name/"\"name\""/""}"
+				name="${name//"	"/""}"
+				name="${name//"\""/""}"
+				if [[ "$1" == "test" ]]; then
+					echo "$cmd \"$thedir/compatdata/$id\" \"$thedir/compatdata/$name\""
+				fi
+				if [[ "$1" == "run" ]]; then
+					$cmd "$thedir/compatdata/$id" "$thedir/compatdata/$name"
+				fi
+				counter=$(( counter + 1 ))
+#			else
+				#I guess it's technically an error but steam downloads appmanifest files for all of a game's subdepo's, so I guess we don't need to report on every single one. Or really any of them.
+#				echo "ERROR: Missing target directory for ($name): $thedir/compatdata/$id"
+#				echo "Skipping."
+			fi
+		fi
+	done
 }
 
 usage(){
@@ -86,52 +138,13 @@ if (( $# >= 1 )); then
 	thedir="$(realpath "$1")"
 	if [[ -d "$thedir/compatdata" ]]; then
 		echo "The following commands will run:"
-		counter=0
-		for i in "$thedir/"*".acf"; do
-			id="${i/"$thedir/appmanifest_"/""}"
-			id="${id/".acf"/""}"
-			if [[ -d "$thedir/compatdata/$id" ]]; then
-				#line for undoing when $thedir/compatdata/$id/$id" was created by ln.
-				#(I had to use -f and -T to prevent this. I had no idea ln behaved like this.)
-#				if [[ -d "$thedir/compatdata/$id/$id" ]]; then
-#					gio remove "$thedir/compatdata/$id/$id"
-#				fi
-
-				name="$(readline "$i" "5")"
-				name="${name/"\"name\""/""}"
-				name="${name//"	"/""}"
-				name="${name//"\""/""}"
-				echo "$cmd \"$thedir/compatdata/$id\" \"$thedir/compatdata/$name\""
-				counter=$(( counter + 1 ))
-#			else
-				#I guess it's technically an error but steam downloads appmanifest files for all of a game's subdepo's, so I guess we don't need to report on every single one. Or really any of them.
-#				echo "ERROR: Missing target directory for ($name): $thedir/compatdata/$id"
-#				echo "Skipping."
-			fi
-		done
-
-		#same code again but we run it for realsies this time. it's really just a single line change. code must be updated in both blocks.
+		lnfn "test"
 		echo
 		echo "$counter symlinks will be created."
 		echo "Continue? [ y / n ]"
 		read input
 		if [[ "$input" == "y"* ]] || [[ "$input" == "Y"* ]]; then
-			counter=0
-			for i in "$thedir/"*".acf"; do
-				id="${i/"$thedir/appmanifest_"/""}"
-				id="${id/".acf"/""}"
-				if [[ -d "$thedir/compatdata/$id" ]]; then
-					name="$(readline "$i" "5")"
-					name="${name/"\"name\""/""}"
-					name="${name//"	"/""}"
-					name="${name//"\""/""}"
-					$cmd "$thedir/compatdata/$id" "$thedir/compatdata/$name"
-					counter=$(( counter + 1 ))
-#				else
-#					echo "ERROR: Missing target directory for ($name): $thedir/compatdata/$id"
-#					echo "Skipping."
-				fi
-			done
+			lnfn "run"
 			echo
 			echo "Done!"
 			echo "$counter symlinks created."
@@ -158,16 +171,19 @@ if (( $# >= 1 )); then
 		found=0
 		for number in "$thedir/compatdata/"*; do
 			if [[ -d "$number" ]] && ! [[ -L "$number" ]]; then
-				if ! [[ -e "$thedir/appmanifest_""$(basename "$number")"".acf" ]]; then
-					if [[ $found == 0 ]]; then
-						found=1
-						unaccountedfound=1
-						echo
-						echo "--------------------------------"
-						echo "Unused compatdata directory(s) found:"
+				numberbn="$(basename "$number")"
+				if [[ "$(isfiltered "$numberbn")" == "false" ]]; then
+					if ! [[ -e "$thedir/appmanifest_""$numberbn"".acf" ]]; then
+						if [[ $found == 0 ]]; then
+							found=1
+							unaccountedfound=1
+							echo
+							echo "--------------------------------"
+							echo "Unused compatdata directory(s) found:"
+						fi
+						echo "$number (link: https://steamdb.info/app/$numberbn)"
+						lnsearch "$number" "$thedir/compatdata/"
 					fi
-					echo "$number (link: https://steamdb.info/app/$(basename "$number"))"
-					lnsearch "$number" "$thedir/compatdata/"
 				fi
 			fi
 		done
@@ -177,20 +193,22 @@ if (( $# >= 1 )); then
 			echo "No unused compatdata directories found."
 		fi
 
-		#let's look for unused steamapps/common directories too while we're at it.
+		#let's look for unused ../steamapps/common directories too while we're at it.
 		found=0
 		for d in "$thedir/common/"*; do
 			if [[ -d "$d" ]] && ! [[ -L "$d" ]]; then
 				asdf="$(basename "$d")"
-				if ! [[ "$(grep -ie "$asdf" "$thedir/app"*)" == *"$asdf"* ]]; then
-					if [[ $found == 0 ]]; then
-						found=1
-						unaccountedfound=1
-						echo
-						echo "--------------------------------"
-						echo "Unused common directory(s) found:"
+				if [[ "$(isfiltered "$asdf")" == "false" ]]; then
+					if ! [[ "$(grep -ie "$asdf" "$thedir/app"*)" == *"$asdf"* ]]; then
+						if [[ $found == 0 ]]; then
+							found=1
+							unaccountedfound=1
+							echo
+							echo "--------------------------------"
+							echo "Unused common directory(s) found:"
+						fi
+						echo "$thedir/common/$asdf ($asdf)"
 					fi
-					echo "$thedir/common/$asdf ($asdf)"
 				fi
 			fi
 		done
@@ -204,15 +222,18 @@ if (( $# >= 1 )); then
 		found=0
 		for number in "$thedir/shadercache/"*; do
 			if [[ -d "$number" ]] && ! [[ -L "$number" ]]; then
-				if ! [[ -e "$thedir/appmanifest_""$(basename "$number")"".acf" ]]; then
-					if [[ $found == 0 ]]; then
-						found=1
-						unaccountedfound=1
-						echo
-						echo "--------------------------------"
-						echo "Unused shadercache directory(s) found:"
+				numberbn="$(basename "$number")"
+				if [[ "$(isfiltered "$numberbn")" == "false" ]]; then
+					if ! [[ -e "$thedir/appmanifest_""$numberbn"".acf" ]]; then
+						if [[ $found == 0 ]]; then
+							found=1
+							unaccountedfound=1
+							echo
+							echo "--------------------------------"
+							echo "Unused shadercache directory(s) found:"
+						fi
+						echo "$number (link: https://steamdb.info/app/$numberbn)"
 					fi
-					echo "$number (link: https://steamdb.info/app/$(basename "$number"))"
 				fi
 			fi
 		done
