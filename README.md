@@ -80,7 +80,7 @@ For a longer explanation on the unused directories and why they should or should
 ## Compatibility problems:
 The only problem I can foresee would be with a game who's title is all numbers. For example, the game [10,000,000](https://store.steampowered.com/app/227580/10000000/).
 
-This script would create a symlink in compatdata that uses the game's title, which is all numbers, and this could create compatibliity problems for a game that uses a game ID that matches the other game's title.
+This script would create a symlink in compatdata that uses the game's title, which is all numbers, and this could create compatibliity problems for any game who's game ID matches the first game's title.
 
 But in order for this to happen, you would need to own and install two games that can create this kind of conflict. And they would have to be installed in the same steamapps directory. And both would need to be Windows only. And 10,000,000 has a Linux port so even that example wouldn't work. And even if it was Windows only, there are still commas in the title, so again that example wouldn't work either. So this is a very specific situation.
 
