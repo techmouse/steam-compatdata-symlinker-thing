@@ -77,6 +77,20 @@ For a longer explanation on the unused directories and why they should or should
 
 **NOTE: This script will not make symlinks without your confirmation first. You will be given a yes or no prompt to review what links will be created first.**
 
+## Directory filtering:
+You can add your own filters for any directories you want ignored, to the variable `filter` at the top of the script.
+
+The proper syntax is:
+`filter=("directory 1 name here" "directory 2 name here" "gameid here" "99999" "etc")`
+
+There are no commas, names should be in double quotes, and they are separated by only a space. And ensure they are _exactly_ the name of the directory you want ignored.
+
+Example 1: The filter "Fallout" will not filter out the game Fallout: New Vegas.
+
+Example 2: The filter "Fallout: New Vegas" will not filter out any Fallout. Nor will it filter out the game it was intended to filter either, because the directory is named "Fallout New Vegas" not "Fallout: New Vegas".
+
+NOTE: Filter checks aren't applied to broken symlinks.
+
 ## Compatibility problems:
 The only problem I can foresee would be with a game who's title is all numbers. For example, the game [10,000,000](https://store.steampowered.com/app/227580/10000000/).
 
