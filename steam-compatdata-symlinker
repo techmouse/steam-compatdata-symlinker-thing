@@ -114,6 +114,9 @@ longexplain(){
 	echo "If it's a steamapps/common directory, then obviously just look in the game's install directory."
 	echo "If it's a shadercache directory, then you can safely delete that directory, unless you plan on reinstalling that game, on that same steamapps drive, sometime in the near future. This could save Steam from recompiling the shader cache. But even then, Steam may choose to do it anyways, so it's left to your discretion."
 	echo ""
+	echo "NOTE: This script doesn't support non-Steam games. To find which compatdata directory holds the non-Steam game in question, run this:"
+	echo "find ~/path/to/your/steamapps/compatdata/ -iname *program*name*here* 2>/dev/null"
+	echo ""
 	echo "NOTE: Every steamapps directory has its own common, compatdata, and shadercache directories. If you have games installed on multiple drives, even moving a game from one drive to another can leave behind some of these directories. So just because Steam says a game is installed doesn't mean it's installed to the specific steamapps directory you supplied, which would mean these directories are still quite likely not in use. Again, this is all left to your discretion."
 }
 
