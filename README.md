@@ -95,7 +95,7 @@ NOTE: Filter checks aren't applied to broken symlinks.
 ### Non-Steam games:
 As of right now, there doesn't seem to be any reliable way to detect and track data for non-Steam games. Things may change in the future, but this seems to be something I can't automate for now.
 
-But you can still manually make symlinks of your own for them. And if you need help finding which compatdata directory belongs to the non-Steam game you're looking for, open a console and type:
+But you can still manually make symlinks of your own for them. And if you need help finding which compatdata directory belongs to the non-Steam game you're looking for, open a terminal and type:
 
 `find ~/path/to/your/steamapps/compatdata/ -iname *program*name*here* 2>/dev/null`
 
