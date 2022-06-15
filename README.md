@@ -92,7 +92,17 @@ Example 2: The filter "Fallout: New Vegas" will not filter out any Fallout. Nor 
 NOTE: Filter checks aren't applied to broken symlinks.
 
 ## Compatibility problems:
-The only problem I can foresee would be with a game who's title is all numbers. For example, the game [10,000,000](https://store.steampowered.com/app/227580/10000000/).
+### Non-Steam games:
+As of right now, there doesn't seem to be any reliable way to detect and track data for non-Steam games. Things may change in the future, but this seems to be something I can't automate for now.
+
+But you can still manually make symlinks of your own for them. And if you need help finding which compatdata directory belongs to the non-Steam game you're looking for, open a console and type:
+
+`find ~/path/to/your/steamapps/compatdata/ -iname *program*name*here* 2>/dev/null`
+
+Just use `*` instead of spaces. If the program wrote user data to the prefix, then that should find it.
+
+### Games who's titles are all numbers:
+The only other problem I can foresee would be with a game who's title is all numbers. For example, the game [10,000,000](https://store.steampowered.com/app/227580/10000000/).
 
 This script would create a symlink in compatdata that uses the game's title, which is all numbers, and this could create compatibliity problems for any game who's game ID matches the first game's title.
 
