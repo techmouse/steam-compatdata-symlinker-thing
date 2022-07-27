@@ -92,7 +92,7 @@ Example 2: The filter "Fallout: New Vegas" will not filter out any Fallout. Nor 
 NOTE: Filter checks aren't applied to broken symlinks.
 
 ## Custom directory overrides:
-You can set directories to use manually at the top of the script. These directories will be treated identically as their non-custom counterparts. These settings are optional. Leave them blank to go with the defaults.
+You can set directories to use manually at the top of the script. These directories will be treated identically to their non-custom counterparts. These settings are optional. Leave them blank to go with the defaults.
 
 **NOTE:**
 Don't end paths with a slash ("/") and use `$HOME` to reference the home directory.
