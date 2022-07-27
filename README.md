@@ -91,6 +91,14 @@ Example 2: The filter "Fallout: New Vegas" will not filter out any Fallout. Nor 
 
 NOTE: Filter checks aren't applied to broken symlinks.
 
+## Custom directory overrides:
+You can set directories to use manually at the top of the script. These directories will be treated identically as their non-custom counterparts. These settings are optional. Leave them blank to go with the defaults.
+
+**NOTE:**
+Don't end paths with a slash ("/") and use `$HOME` to reference the home directory.
+
+Example: commondir="$HOME/Games/mycustomsteamapps/common"
+
 ## Compatibility problems:
 ### Non-Steam games:
 As of right now, there doesn't seem to be any reliable way to detect and track data for non-Steam games. Things may change in the future, but this seems to be something I can't automate for now.
