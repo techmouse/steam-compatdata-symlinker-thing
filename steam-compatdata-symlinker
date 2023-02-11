@@ -1,7 +1,7 @@
 #!/bin/bash
 #steam-compatdata-symlinker
 #by: Mouse
-#Current build: July 27, 2022
+#Current build: Feb 11, 2023
 
 ###################
 #user config:
@@ -16,7 +16,7 @@ cmd="ln -sTf"
 #filters must be exact
 #in other words, they're case sensitive and each game name or ID must be written here exactly as it appears in the directory name.
 #example 1: the filter "Fallout" will not filter out the game Fallout: New Vegas
-#example 2: the filter "Fallout: New Vegas" will not filter out any Fallout. Nor will it filter out the game it was intended to filter either, because the directory is named "Fallout New Vegas"
+#example 2: the filter "Fallout: New Vegas" will not filter out any Fallout. Nor will it filter out the game it was intended to filter either, because the directory is named "Fallout New Vegas" and not "Fallout: New Vegas"
 #note: filter checks aren't applied to broken symlinks
 filter=("Steam Controller Configs" "0")
 
@@ -41,9 +41,9 @@ readline(){
 	if [[ $1 && $2 ]]; then
 		max="$(countlines "$1")"
 		if (( $2 > $max )); then
-			echo "$(sed -n "${max}p" "$1")"
+			sed -n "${max}p" "$1"
 		else
-			echo "$(sed -n "${2}p" "$1")"
+			sed -n "${2}p" "$1"
 		fi
 	fi
 }
@@ -93,11 +93,20 @@ lnfn(){
 				name="${name/"\"name\""/""}"
 				name="${name//"	"/""}"
 				name="${name//"\""/""}"
-				if [[ "$1" == "test" ]]; then
-					echo "$cmd \"$compatdatadir/$id\" \"$compatdatadir/$name\""
-				fi
-				if [[ "$1" == "run" ]]; then
-					$cmd "$compatdatadir/$id" "$compatdatadir/$name"
+				if [[ "$name" =~ ^[0-9]+$ ]] && [[ -e "$compatdatadir/$name" ]] && ! [[ -L "$compatdatadir/$name" ]]; then
+					echo
+					echo "WARNING: $compatdatadir/$name already exists, is all numbers, and isn't a symlink. This seems like the rare situation where a game, who's name is all numbers, can conflict with compatdata directories and the symlinks this script creates."
+					echo "As a precaution, this script will only report the conflict. It's on you to create a symlink, if you really want one."
+					echo "To stop getting warnings about $name, add it to the filter list at the top of this script."
+					echo "Skipping $name."
+					echo
+				else
+					if [[ "$1" == "test" ]]; then
+						echo "$cmd \"$compatdatadir/$id\" \"$compatdatadir/$name\""
+					fi
+					if [[ "$1" == "run" ]]; then
+						$cmd "$compatdatadir/$id" "$compatdatadir/$name"
+					fi
 				fi
 				counter=$(( counter + 1 ))
 #			else
@@ -122,18 +131,18 @@ usage(){
 longexplain(){
 	echo "There are multiple reasons why unused directories would exist, such as the game was uninstalled or moved to a different drive, another program made changes, a user made changes, etc etc."
 	echo "But the important part is, as far as any directories reported by this script goes, Steam would be unaware of their existence and wouldn't be doing anything with them."
-	echo ""
+	echo
 	echo "If you would like to know what game a directory is tied to, type the full name of the folder (the number(which is the steamid)) into your Steam library. It will automatically show you the game."
-	echo ""
+	echo
 	echo "Whether or not these directories should be deleted is left to your discretion. But be aware your user data could be inside of them, including save files. So I advise at least looking around in the directory for valuable data first before deleting it."
-	echo ""
+	echo
 	echo "If it's a compatdata directory, then look in the program files and steamuser directories."
 	echo "If it's a steamapps/common directory, then obviously just look in the game's install directory."
 	echo "If it's a shadercache directory, then you can safely delete that directory, unless you plan on reinstalling that game, on that same steamapps drive, sometime in the near future. This could save Steam from recompiling the shader cache. But even then, Steam may choose to do it anyways, so it's left to your discretion."
-	echo ""
+	echo
 	echo "NOTE: This script doesn't support non-Steam games. To find which compatdata directory holds the non-Steam game in question, run this:"
-	echo "find ~/path/to/your/steamapps/compatdata/ -iname *program*name*here* 2>/dev/null"
-	echo ""
+	echo "find ~/path/to/your/steamapps/compatdata/ -iname *game*name*here* 2>/dev/null"
+	echo
 	echo "NOTE: Every steamapps directory has its own common, compatdata, and shadercache directories. If you have games installed on multiple drives, even moving a game from one drive to another can leave behind some of these directories. So just because Steam says a game is installed doesn't mean it's installed to the specific steamapps directory you supplied, which would mean these directories are still quite likely not in use. Again, this is all left to your discretion."
 }
 
@@ -153,7 +162,7 @@ if (( $# >= 1 )); then
 				;;
 		esac
 	done
-	shift "$(($OPTIND -1))"
+	shift "$((OPTIND -1))"
 
 	thedir="$(realpath "$1")"
 	if [[ "$compatdatadir" == "" ]]; then
@@ -172,8 +181,8 @@ if (( $# >= 1 )); then
 		echo
 		echo "$counter symlinks will be created."
 		echo "Continue? [ y / n ]"
-		read input
-		if [[ "$input" == "y"* ]] || [[ "$input" == "Y"* ]]; then
+		read -e input
+		if [[ "${input,,}" == "y"* ]]; then
 			lnfn "run"
 			echo
 			echo "Done!"
@@ -284,7 +293,7 @@ if (( $# >= 1 )); then
 			fi
 		else
 			echo "ERROR: An invalid shadercache directory has been set:"
-			echo '$shadercachedir'": $shadercachedir"
+			echo "'$shadercachedir': $shadercachedir"
 			echo "Skipping."
 			echo
 		fi
