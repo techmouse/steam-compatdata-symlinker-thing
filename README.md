@@ -117,3 +117,5 @@ This script would create a symlink in compatdata that uses the game's title, whi
 But in order for this to happen, you would need to own and install two games that can create this kind of conflict. And they would have to be installed in the same steamapps directory. And both would need to be Windows only. And 10,000,000 has a Linux port so even that example wouldn't work. And even if it was Windows only, there are still commas in the title, so again that example wouldn't work either. So this is a very specific situation.
 
 In short, the odds of this happening are very, very slim, almost to the point of being comical, but I still feel a responsiblity to make you aware of it. Not impossible, but still extremely improbable.
+
+**UPDATE:** The odds of this very rare and unlikely event becoming an issue has finally be reduced to 0 once and for all! How did we fix it? We didn't! This script will simply inform you of this situation if it ever occurs, take no action, and move on! It's on **YOU** to create and name the symlink!
